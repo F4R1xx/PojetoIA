@@ -38,6 +38,8 @@ const elements = {
 // --- Event Handlers ---
 let handleNav, handleRedo, handleDelete, handleView, handleCheck;
 
+// f4r1xx/pojetoia/PojetoIA-bab74157b6c64eec171b8ad1b88e362d30752290/view.js
+
 export function setupUI(navHandler, redoHandler, deleteHandler, viewHandler, checkHandler) {
     handleNav = navHandler;
     handleRedo = redoHandler;
@@ -49,10 +51,30 @@ export function setupUI(navHandler, redoHandler, deleteHandler, viewHandler, che
     elements.overlay.addEventListener('click', closeSidebar);
     elements.closeModalBtn.addEventListener('click', () => showLevelUpModal(null, false));
 
+    // CORREÇÃO APLICADA AQUI
     elements.navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
-            const viewId = `${link.id.split('-')[1]}-view`;
+            let viewId;
+            // Mapeia corretamente os IDs dos links para as views
+            switch (link.id) {
+                case 'nav-create':
+                    viewId = 'create-deck-view';
+                    break;
+                case 'nav-decks':
+                    viewId = 'my-decks-view';
+                    break;
+                case 'nav-achievements':
+                    viewId = 'achievements-view';
+                    break;
+                case 'nav-analytics':
+                    viewId = 'analytics-view';
+                    break;
+                default:
+                    // Mantém um fallback, embora o switch cubra todos os casos
+                    viewId = `${link.id.split('-')[1]}-view`; 
+                    break;
+            }
             handleNav(viewId);
         });
     });

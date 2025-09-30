@@ -25,6 +25,8 @@ setupAuth(onLogin, onLogout);
 // --- Auth Handlers ---
 function onLogin(user) {
     currentUser = user;
+    // Mostra a visão principal da aplicação assim que o login é confirmado
+    showView('welcome-view'); 
     loadUserProfile(user.uid, (profile) => {
         userProfile = profile;
         displayUserProfile(userProfile, user.email);
@@ -41,6 +43,8 @@ function onLogout() {
     currentUser = null;
     userProfile = null;
     userDecks = [];
+    // Mostra a tela de autenticação quando o usuário faz logout
+    showView('auth-view'); 
 }
 
 // --- UI Event Handlers ---

@@ -1,7 +1,10 @@
-// Configuração do Firebase
-// ATENÇÃO: A chave de API abaixo está causando o erro "400 (Bad Request)".
-// Verifique se esta chave está correta no seu console do Firebase.
-export const firebaseConfig = {
+// f4r1xx/pojetoia/PojetoIA-bab74157b6c64eec171b8ad1b88e362d30752290/firebase.js
+
+// Importa a função de inicialização do Firebase
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+// Suas configurações do Firebase
+const firebaseConfig = {
   apiKey: "AIzaSyAf44UpI3tii4Vr2V2G37T_UOJQ7oxQSlg",
   authDomain: "pojetoia.firebaseapp.com",
   databaseURL: "https://pojetoia-default-rtdb.firebaseio.com",
@@ -12,3 +15,5 @@ export const firebaseConfig = {
   measurementId: "G-T6N7SBLVYW"
 };
 
+// Inicializa o Firebase e exporta a instância do app
+export const firebaseApp = initializeApp(firebaseConfig);
