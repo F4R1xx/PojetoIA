@@ -33,6 +33,9 @@ const elements = {
     generateLoader: document.getElementById('generate-loader'),
     deckNameInput: document.getElementById('deck-name'),
     courseSelect: document.getElementById('course-select'),
+    timer: document.getElementById('timer'),
+    timeUpMessage: document.getElementById('time-up-message'),
+    timerContainer: document.getElementById('timer-container'),
 };
 
 // --- Event Handlers ---
@@ -72,7 +75,7 @@ export function setupUI(navHandler, redoHandler, deleteHandler, viewHandler, che
                     break;
                 default:
                     // Mantém um fallback, embora o switch cubra todos os casos
-                    viewId = `${link.id.split('-')[1]}-view`; 
+                    viewId = `${link.id.split('-')[1]}-view`;
                     break;
             }
             handleNav(viewId);
@@ -176,6 +179,7 @@ export function displayQuiz(deckData, isCorrecting) {
     elements.quizTopic.textContent = `${deckData.name} (${deckData.course})`;
     elements.questionsWrapper.innerHTML = '';
     elements.quizResults.classList.add('hidden');
+    showTimeUpMessage(false); // Garante que a mensagem de tempo esgotado está escondida
 
     deckData.questions.forEach((q, index) => {
         const questionEl = document.createElement('div');
@@ -183,7 +187,7 @@ export function displayQuiz(deckData, isCorrecting) {
         questionEl.innerHTML = `<p class="font-semibold mb-3 text-left">${index + 1}. ${q.question}</p>`;
         const optionsList = document.createElement('div');
         optionsList.className = 'space-y-2 text-left';
-        
+
         q.options.forEach((option) => {
             const optionId = `q${index}-opt-${option.replace(/\s+/g, '-')}`;
             const isChecked = q.userAnswer === option;
@@ -268,7 +272,7 @@ export function displayAnalytics(decks) {
     courseAnalyticsEl.innerHTML = `<h3 class="font-bold text-lg text-white mb-3">Média por Curso</h3>`;
     const courseList = document.createElement('div');
     courseList.className = 'space-y-2';
-    
+
     Object.keys(scoresByCourse).forEach(course => {
         const avg = (scoresByCourse[course].totalScore / scoresByCourse[course].count).toFixed(1);
         courseList.innerHTML += `<div class="flex justify-between items-center text-sm">
@@ -313,5 +317,25 @@ export function setLoading(isLoading) {
     elements.generateLoader.style.display = isLoading ? 'block' : 'none';
     elements.deckNameInput.disabled = isLoading;
     elements.courseSelect.disabled = isLoading;
+}
+
+export function displayTimer(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    elements.timer.textContent = `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
+export function showTimeUpMessage(show) {
+    if (show) {
+        elements.timeUpMessage.classList.remove('hidden');
+        elements.timerContainer.classList.add('hidden');
+        elements.questionsWrapper.classList.add('opacity-20', 'pointer-events-none');
+        elements.checkAnswersBtn.classList.remove('hidden');
+        elements.checkAnswersBtn.style.display = 'block';
+    } else {
+        elements.timeUpMessage.classList.add('hidden');
+        elements.timerContainer.classList.remove('hidden');
+        elements.questionsWrapper.classList.remove('opacity-20', 'pointer-events-none');
+    }
 }
 

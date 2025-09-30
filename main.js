@@ -1,7 +1,7 @@
 import { setupAuth } from './auth.js';
 import { loadUserProfile, loadUserDecks, pushFlashcardSet, updateFlashcardSet, deleteFlashcardSet, saveUserProfile } from './database.js';
 import { awardXp, checkAndUnlockAchievements, getXpProgress } from './game.js';
-import { setupUI, showView, displayUserProfile, displayUserDecks, displayQuiz, displayAnalytics, displayAchievements, setLoading, showLevelUpModal } from './view.js';
+import { setupUI, showView, displayUserProfile, displayUserDecks, displayQuiz, displayAnalytics, displayAchievements, setLoading, showLevelUpModal, displayTimer, showTimeUpMessage } from './view.js';
 import { generateFlashcards } from './api.js';
 import { serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
@@ -10,6 +10,8 @@ let currentUser = null;
 let userProfile = null;
 let userDecks = [];
 let currentQuizData = null;
+let quizTimer = null;
+
 
 // --- DOM Elements ---
 const flashcardForm = document.getElementById('flashcard-form');
@@ -26,7 +28,7 @@ setupAuth(onLogin, onLogout);
 function onLogin(user) {
     currentUser = user;
     // Mostra a visão principal da aplicação assim que o login é confirmado
-    showView('welcome-view'); 
+    showView('welcome-view');
     loadUserProfile(user.uid, (profile) => {
         userProfile = profile;
         displayUserProfile(userProfile, user.email);
@@ -44,11 +46,37 @@ function onLogout() {
     userProfile = null;
     userDecks = [];
     // Mostra a tela de autenticação quando o usuário faz logout
-    showView('auth-view'); 
+    showView('auth-view');
+}
+
+// --- Timer Controls ---
+function startQuizTimer() {
+    stopQuizTimer(); // Garante que não haja timers duplicados
+    let timeLeft = 900; // 15 minutos em segundos
+
+    quizTimer = setInterval(() => {
+        timeLeft--;
+        displayTimer(timeLeft);
+        if (timeLeft <= 0) {
+            stopQuizTimer();
+            // Apenas exibe a mensagem de tempo esgotado e aguarda a ação do usuário
+            showTimeUpMessage(true);
+        }
+    }, 1000);
+
+    displayTimer(timeLeft);
+}
+
+function stopQuizTimer() {
+    clearInterval(quizTimer);
+    quizTimer = null;
 }
 
 // --- UI Event Handlers ---
 function handleNavigation(view) {
+    if (view !== 'quiz-view') {
+        stopQuizTimer();
+    }
     if (view === 'analytics-view') {
         displayAnalytics(userDecks);
     } else if (view === 'achievements-view') {
@@ -69,6 +97,7 @@ function handleRedoDeck(deckId) {
         currentQuizData.isRedo = true; // Flag to indicate that it's a 'redo'
         displayQuiz(currentQuizData, false);
         showView('quiz-view');
+        startQuizTimer();
     }
 }
 
@@ -87,35 +116,46 @@ function handleViewDeck(deckId) {
         const isCompleted = deck.score !== null;
         displayQuiz(deck, isCompleted);
         showView('quiz-view');
+        stopQuizTimer(); // Para o timer se estiver visualizando um deck completo
     }
 }
 
 async function handleCheckAnswers() {
     if (!currentQuizData || !currentQuizData.id || !currentUser) return;
+
+    // Verifica se a mensagem de tempo esgotado estava visível ANTES de fazer qualquer outra coisa
+    const timeUpMessageIsVisible = !document.getElementById('time-up-message').classList.contains('hidden');
     
+    stopQuizTimer();
+
     let correctAnswers = 0, wrongAnswers = 0;
     currentQuizData.questions.forEach((q, index) => {
+        // Usa as respostas já marcadas ou `null` se não houver
         const selected = document.querySelector(`input[name="question-${index}"]:checked`);
         q.userAnswer = selected ? selected.value : null;
         if (q.userAnswer === q.answer) correctAnswers++;
         else if (q.userAnswer !== null) wrongAnswers++;
     });
 
-    const finalScore = Math.max(0, correctAnswers - wrongAnswers);
+    const finalScore = correctAnswers;
     currentQuizData.score = finalScore;
-    
+
     const leveledUp = await awardXp(userProfile, correctAnswers, currentQuizData.questions.length);
-    if(leveledUp) showLevelUpModal(userProfile.level);
+    // Só exibe o Level Up se o tempo NÃO tiver esgotado
+    if (leveledUp && !timeUpMessageIsVisible) {
+        showLevelUpModal(userProfile.level);
+    }
 
     await checkAndUnlockAchievements(currentUser.uid, userProfile, userDecks);
     await saveUserProfile(currentUser.uid, userProfile);
-    
+
     const deckToUpdate = { ...currentQuizData };
     if (deckToUpdate.isRedo) deckToUpdate.status = 'refeito';
     delete deckToUpdate.id;
     delete deckToUpdate.isRedo;
 
     updateFlashcardSet(currentUser.uid, currentQuizData.id, deckToUpdate);
+    // Exibe a tela de correção
     displayQuiz(currentQuizData, true);
 }
 
@@ -154,6 +194,7 @@ flashcardForm.addEventListener('submit', async (e) => {
 
         displayQuiz(currentQuizData, false);
         showView('quiz-view');
+        startQuizTimer();
         deckNameInput.value = '';
         courseSelect.value = '';
 
