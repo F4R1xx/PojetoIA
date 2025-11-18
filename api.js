@@ -2,7 +2,7 @@ import { OPENAI_API_KEY } from './config.js';
 
 const AI_API_URL_OPENAI = 'https://api.openai.com/v1/chat/completions';
 
-// Lista de "lentes" ou focos diferentes. 
+// Lista de "lentes" ou focos diferentes para aumentar a qualidade e dificuldade
 const focusAngles = [
     "Foque em situações-problema e estudos de caso que exijam a aplicação de duas ou mais regras/leis ao mesmo tempo, simulando a complexidade real da prova.",
     "Concentre-se em exceções, súmulas recentes, detalhes técnicos minuciosos e jurisprudência controversa ou de alto impacto.",
@@ -11,22 +11,33 @@ const focusAngles = [
     "Dê prioridade máxima para tópicos que são frequentemente negligenciados ou que exigem um nível de detalhe (granularidade) altíssimo."
 ];
 
+// Objeto que mapeia as diretrizes específicas de conteúdo para cada curso,
+// garantindo que o prompt enviado à IA seja focado e não misture temas.
+const courseDirectives = {
+    "SERPRO": "Crie 10 questões de Múltipla Escolha sobre arquitetura de sistemas complexos, segurança aplicada (ex: vulnerabilidades e remediações específicas), e análise crítica de requisitos e código (Python/Java/Flutter).",
+    "PRF": "Crie 10 questões de Múltipla Escolha que exijam julgamento de legalidade em cenários complexos (abordagens, uso da força, autuações baseadas em CTB e leis penais).",
+    "ENEM": "Crie 10 questões de Múltipla Escolha que exijam raciocínio crítico e contextualização científica/social profunda. Use gráficos, tabelas ou trechos de textos científicos complexos. O foco é em Ciências da Natureza, Matemática, Ciências Humanas e Linguagens.",
+    "OAB": "Crie 10 questões de Múltipla Escolha baseadas em súmulas do STF/STJ ou situações-problema com prazos e recursos processuais controversos.",
+    "Medicina": "Crie 10 questões de Múltipla Escolha que apresentem *Casos Clínicos* com múltiplas comorbidades ou apresentações atípicas. Peça o diagnóstico diferencial ou a conduta mais atualizada, seguindo guidelines estabelecidos."
+};
+
 export async function generateFlashcards(deckName, course) {
     // Sorteia um ângulo de abordagem para esta execução específica
     const randomFocus = focusAngles[Math.floor(Math.random() * focusAngles.length)];
-    const isDuel = deckName.toLowerCase().includes('duelo vs');
+    // Pega a diretriz específica para o curso solicitado.
+    const specificDirective = courseDirectives[course] || `Crie 10 questões de Múltipla Escolha (4 alternativas) sobre o tema ${course}.`;
 
     // Define o sistema como uma banca examinadora rigorosa
-    const systemInstruction = `Você é um membro sênior, altamente rigoroso e especializado de uma banca examinadora de elite. Sua tarefa é criar 10 itens de Múltipla Escolha (4 alternativas) para uma prova de nível de concurso/residência.
+    const systemInstruction = `Você é um membro sênior, altamente rigoroso e especializado de uma banca examinadora de elite, focado **APENAS** no curso de ${course}. Sua tarefa é criar 10 itens de Múltipla Escolha (4 alternativas) para uma prova de nível de concurso/residência.
 
 1.  **Dificuldade**: O nível de dificuldade deve ser "Difícil". O objetivo é eliminar candidatos fracos.
-2.  **Formato**: Use linguagem formal, técnica e impessoal. As alternativas devem ser críveis.
-3.  **Proibição**: Nunca crie perguntas de definição simples ou introdução.
+2.  **Formato**: Use linguagem formal, técnica e impessoal. As alternativas devem ser críveis e totalmente focadas no curso ${course}.
+3.  **Proibição**: Nunca crie perguntas de definição simples ou introdução, e **NUNCA** misture tópicos de outros cursos.
 4.  **Variedade**: As 10 questões devem abordar 10 sub-tópicos distintos dentro da área solicitada.`;
 
 
     // Constrói um prompt dinâmico e muito mais rigoroso
-    const prompt = `Crie 10 questões de MÚLTIPLA ESCOLHA (4 opções) para o curso de "${course}". 
+    const prompt = `Gere 10 questões de MÚLTIPLA ESCOLHA (4 opções) para o curso de **${course}**. 
 O deck se chama "${deckName}".
 
 ---
@@ -35,12 +46,8 @@ Siga estritamente este foco de prova para evitar repetição e garantir profundi
 >>> ${randomFocus} <<<
 ---
 
-**DIRETRIZES TÉCNICAS ESPECÍFICAS PARA A ÁREA:**
-- **SERPRO (TI):** Crie questões sobre arquitetura de sistemas complexos, segurança aplicada (ex: vulnerabilidades e remediações específicas), e análise crítica de requisitos e código (Python/Java/Flutter).
-- **PRF/Polícia:** Elabore questões que exijam **julgamento de legalidade** em cenários complexos (abordagens, uso da força, autuações baseadas em CTB e leis penais).
-- **OAB:** Formule questões baseadas em súmulas do STF/STJ ou situações-problema com prazos e recursos processuais controversos.
-- **ENEM:** Exija **raciocínio crítico e contextualização científica/social** profunda. Use gráficos, tabelas ou trechos de textos científicos complexos.
-- **Medicina:** Apresente *Casos Clínicos* com múltiplas comorbidades ou apresentações atípicas. Peça o diagnóstico diferencial ou a conduta mais atualizada, seguindo guidelines estabelecidos.
+**DIRETRIZ TÉCNICA ESPECÍFICA:**
+${specificDirective}
 
 **FORMATO DE SAÍDA (Obrigatoriamente JSON):**
 Responda APENAS com um JSON válido. Não escreva nada antes ou depois.
