@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Flashcards</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Importando Chart.js para os gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body class="bg-gray-900 text-gray-200 font-sans">
+
+    <!-- Container de Autenticação -->
+    <div id="auth-container" class="min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-md">
+            <h1 class="text-3xl font-bold text-center text-white mb-6">AI Flashcards</h1>
+            <div class="bg-gray-800 p-8 rounded-lg shadow-lg w-full">
+                <div class="flex border-b border-gray-700 mb-6">
+                    <button id="login-tab"
+                        class="flex-1 py-2 text-center font-semibold text-indigo-400 border-b-2 border-indigo-400 transition-colors">Entrar</button>
+                    <button id="register-tab"
+                        class="flex-1 py-2 text-center font-semibold text-gray-400 transition-colors">Registrar</button>
+                </div>
+                <form id="login-form">
+                    <input id="login-email" type="email" placeholder="Email"
+                        class="w-full bg-gray-700 text-white p-3 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required>
+                    <input id="login-password" type="password" placeholder="Senha"
+                        class="w-full bg-gray-700 text-white p-3 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required>
+                    <button type="submit"
+                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded transition-colors">Entrar</button>
+                </form>
+                <form id="register-form" class="hidden">
+                    <input id="register-email" type="email" placeholder="Email"
+                        class="w-full bg-gray-700 text-white p-3 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required>
+                    <input id="register-password" type="password" placeholder="Senha"
+                        class="w-full bg-gray-700 text-white p-3 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required>
+                    <button type="submit"
+                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded transition-colors">Criar
+                        Conta</button>
+                </form>
+                <div class="flex items-center my-6">
+                    <hr class="flex-grow border-t border-gray-600">
+                    <span class="mx-4 text-gray-400">ou</span>
+                    <hr class="flex-grow border-t border-gray-600">
+                </div>
+                <button id="google-login"
+                    class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded transition-colors flex items-center justify-center">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo"
+                        class="w-6 h-6 mr-3">
+                    Entrar com Google
+                </button>
+                <p id="auth-error" class="text-red-400 text-center mt-4"></p>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Container Principal da Aplicação -->
+    <div id="main-container" class="hidden">
+        <!-- Menu Lateral (Sidebar) -->
+        <nav id="sidebar-menu"
+            class="fixed top-0 left-0 h-full w-64 bg-gray-800 shadow-lg z-20 transform -translate-x-full transition-transform duration-300 ease-in-out">
+            <div class="p-4 flex flex-col h-full">
+                <div>
+                    <h2 class="text-2xl font-bold text-white mb-6">AI Flashcards</h2>
+                    <!-- Profile/Gamification Info -->
+                    <div id="profile-info" class="mb-6">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-indigo-400 font-bold">Level <span id="user-level">1</span></span>
+                            <span class="text-xs text-gray-400"><span id="user-xp">0</span> / <span
+                                    id="xp-to-next-level">100</span> XP</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2.5">
+                            <div id="xp-bar" class="bg-indigo-600 h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                         <!-- Credits Display -->
+                        <div class="mt-4 flex items-center justify-center bg-gray-700/50 rounded-lg p-2">
+                             <svg class="w-6 h-6 mr-2 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM6.875 9.125a.875.875 0 10-1.75 0V11c0 .483.392.875.875.875h4.25c.483 0 .875-.392.875-.875V9.125a.875.875 0 10-1.75 0V10H7.75V9.125z" clip-rule="evenodd"></path>
+                             </svg>
+                            <span id="user-credits" class="text-lg font-bold text-yellow-400">0</span>
+                            <span class="ml-2 text-gray-300">Créditos</span>
+                        </div>
+                    </div>
+                    <ul class="space-y-3">
+                        <li>
+                            <a href="#" id="nav-create"
+                                class="nav-link flex items-center p-3 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">
+                                <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                Criar Novo Deck
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" id="nav-decks"
+                                class="nav-link flex items-center p-3 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">
+                                <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2H5a2 2 0 00-2 2v2m14 0h-2M5 11H3">
+                                    </path>
+                                </svg>
+                                Meus Decks
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" id="nav-achievements"
+                                class="nav-link flex items-center p-3 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">
+                                <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 11l3-3m0 0l3 3m-3-3v8m0-13a9 9 0 110 18 9 9 0 010-18z"></path>
+                                </svg>
+                                Conquistas
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" id="nav-analytics"
+                                class="nav-link flex items-center p-3 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">
+                                <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                                    </path>
+                                </svg>
+                                Análise de Desempenho
+                            </a>
+                        </li>
+                        <!-- NOVO ITEM: DISPUTAS -->
+                        <li>
+                            <a href="#" id="nav-duels"
+                                class="nav-link flex items-center p-3 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">
+                                <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                                Disputas (PVP)
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="mt-auto">
+                    <p id="user-email" class="text-xs text-gray-400 text-center truncate"></p>
+                </div>
+            </div>
+        </nav>
+        <div id="overlay" class="fixed inset-0 bg-black opacity-50 z-10 hidden"></div>
+
+        <!-- Conteúdo Principal -->
+        <div id="content-wrapper" class="transition-all duration-300 ease-in-out">
+            <header class="bg-gray-800/80 backdrop-blur-sm sticky top-0 z-10 shadow-md">
+                <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex items-center justify-between h-16">
+                        <button id="hamburger-btn" class="text-gray-300 hover:text-white">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 6h16M4 12h16M4 18h16"></path>
+                            </svg>
+                        </button>
+                        <div class="flex items-center space-x-4">
+                            <button id="logout-button"
+                                class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md text-sm transition-colors">Sair</button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="p-4 sm:p-6 lg:p-8">
+                <div id="welcome-view" class="main-view text-center">
+                    <h2 class="text-3xl font-bold mb-4">Bem-vindo(a) ao AI Flashcards!</h2>
+                    <p class="text-gray-400">Use o menu para criar um novo deck, ver seus decks salvos ou analisar seu
+                        desempenho.</p>
+                </div>
+                <div id="create-deck-view" class="main-view hidden max-w-2xl mx-auto text-center">
+                    <h2 class="text-2xl font-bold mb-2">Criar Novo Deck de Flashcards</h2>
+                    <p class="text-gray-400 mb-6">Selecione o curso e dê um nome ao seu deck para começar.</p>
+                    <form id="flashcard-form" class="w-full">
+                        <div class="mb-4">
+                            <input type="text" id="deck-name" placeholder="Nome do Deck (ex: PRF - Trânsito 1)"
+                                required
+                                class="w-full bg-gray-700 text-white p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div class="mb-6">
+                            <select id="course-select" required
+                                class="w-full bg-gray-700 text-white p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none">
+                                <option value="" disabled selected>Selecione um curso...</option>
+                                <option value="SERPRO">SERPRO (TI)</option>
+                                <option value="PRF">Polícia Rodoviária Federal</option>
+                                <option value="ENEM">ENEM</option>
+                                <option value="OAB">OAB</option>
+                                <option value="Medicina">Residência Médica</option>
+                            </select>
+                        </div>
+                        <button type="submit"
+                            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-md transition-colors flex items-center justify-center h-12">
+                            <span id="generate-btn-text">Gerar Flashcards</span>
+                            <div id="generate-loader" class="loader hidden"></div>
+                        </button>
+                        <p class="text-center text-gray-500 text-sm mt-4">Custo: 10 Créditos</p>
+                        <p id="generate-error" class="text-red-400 text-center mt-4"></p>
+                    </form>
+                </div>
+                <div id="my-decks-view" class="main-view hidden">
+                    <h2 class="text-2xl font-bold mb-6">Meus Decks de Estudo</h2>
+                    <div id="history-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        <!-- Decks são inseridos aqui -->
+                    </div>
+                    <p id="no-history" class="text-center text-gray-400 hidden">Você ainda não criou nenhum deck.</p>
+                </div>
+                
+                <!-- ANALYTICS VIEW (MODIFICADO: Gráficos + IA) -->
+                <div id="analytics-view" class="main-view hidden">
+                    <h2 class="text-2xl font-bold mb-6">Análise de Desempenho</h2>
+                    
+                    <!-- Botão para gerar relatório com IA -->
+                    <div class="mb-8 bg-gradient-to-r from-indigo-900 to-gray-800 p-6 rounded-lg border border-indigo-700 shadow-lg">
+                        <div class="flex flex-col md:flex-row items-center justify-between">
+                            <div class="mb-4 md:mb-0">
+                                <h3 class="text-xl font-bold text-white mb-2">⚡ AI Coach</h3>
+                                <p class="text-gray-300 text-sm">Receba um diagnóstico detalhado dos seus pontos fortes e fracos gerado por Inteligência Artificial.</p>
+                            </div>
+                            <!-- Botão Atualizado com Custo -->
+                            <button id="btn-generate-report" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transition-transform hover:scale-105 flex flex-col items-center justify-center">
+                                <div class="flex items-center">
+                                    <span class="mr-2">✨</span> Analisar meu Desempenho
+                                </div>
+                                <span class="text-xs font-normal opacity-80 mt-1">Custo: 5 Créditos</span>
+                            </button>
+                        </div>
+                        <!-- Área do Relatório (Inicialmente Oculta) -->
+                        <div id="ai-report-container" class="hidden mt-6 p-4 bg-gray-900/50 rounded border border-indigo-500/30 text-gray-200">
+                            <div id="ai-report-loader" class="hidden flex justify-center py-4">
+                                <div class="loader"></div>
+                            </div>
+                            <div id="ai-report-content" class="prose prose-invert max-w-none text-sm leading-relaxed"></div>
+                        </div>
+                    </div>
+
+                    <!-- KPIs e Gráficos -->
+                    <div id="analytics-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                        <!-- KPIs Numéricos inseridos via JS -->
+                    </div>
+
+                    <!-- Área dos Gráficos Chart.js -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
+                            <h3 class="text-lg font-semibold mb-4 text-gray-300">Evolução de Notas</h3>
+                            <div class="relative h-64 w-full">
+                                <canvas id="evolutionChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
+                            <h3 class="text-lg font-semibold mb-4 text-gray-300">Média por Área</h3>
+                            <div class="relative h-64 w-full">
+                                <canvas id="radarChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p id="no-analytics" class="text-center text-gray-400 hidden mt-6">Complete alguns decks para ver suas estatísticas e gráficos.</p>
+                </div>
+
+                <div id="quiz-view" class="main-view hidden max-w-3xl mx-auto text-center">
+                    <h2 class="text-2xl font-bold mb-4">Estudando: <span id="quiz-topic"></span></h2>
+                    
+                    <div id="timer-container" class="text-2xl font-bold text-yellow-400">
+                        <span id="timer">15:00</span>
+                    </div>
+
+                    <div id="time-up-message" class="hidden font-bold my-10">
+                        Tempo Esgotado!
+                    </div>
+                    <div id="quiz-container">
+                        <div id="questions-wrapper" class="space-y-6">
+                            <!-- Questões do quiz são inseridas aqui -->
+                        </div>
+                        <div id="quiz-results" class="hidden mt-8 bg-gray-800 p-6 rounded-lg">
+                            <h3 class="text-2xl font-semibold">Resultado Final</h3>
+                            <p id="final-score" class="text-5xl font-bold my-4 text-green-400">0 / 10</p>
+                            <p id="score-details" class="text-gray-400"></p>
+                        </div>
+                        <button id="check-answers-btn"
+                            class="mt-8 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-md transition-colors">Corrigir</button>
+                    </div>
+                </div>
+
+                <!-- Tela de Conquistas -->
+                <div id="achievements-view" class="main-view hidden">
+                    <h2 class="text-2xl font-bold mb-6">Minhas Conquistas</h2>
+                    <div id="achievements-container"
+                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <!-- Conquistas são inseridas aqui -->
+                    </div>
+                </div>
+
+                <!-- NOVA VIEW: DISPUTAS -->
+                <div id="duels-view" class="main-view hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold">Arena de Duelos</h2>
+                        <button id="btn-new-duel" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-bold transition-colors">
+                            + Novo Desafio
+                        </button>
+                    </div>
+
+                    <!-- Formulário de Criação de Duelo (Inicialmente Oculto) -->
+                    <div id="new-duel-form-container" class="hidden bg-gray-800 p-6 rounded-lg mb-8 border border-gray-700">
+                        <h3 class="text-xl font-bold mb-4 text-indigo-400">Configurar Duelo</h3>
+                        <form id="create-duel-form" class="space-y-4">
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1">Email do Oponente</label>
+                                <input type="email" id="duel-opponent-email" placeholder="amigo@exemplo.com" required
+                                    class="w-full bg-gray-700 text-white p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-400 mb-1">Curso / Tema</label>
+                                <select id="duel-course-select" required
+                                    class="w-full bg-gray-700 text-white p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="" disabled selected>Selecione um tema...</option>
+                                    <option value="SERPRO">SERPRO (TI)</option>
+                                    <option value="PRF">Polícia Rodoviária Federal</option>
+                                    <option value="ENEM">ENEM</option>
+                                    <option value="OAB">OAB</option>
+                                    <option value="Medicina">Residência Médica</option>
+                                </select>
+                            </div>
+                            <div class="flex justify-between items-center mt-6">
+                                <div class="text-gray-400 text-sm">
+                                    Custo: <span class="font-bold text-white">20 Créditos</span>
+                                </div>
+                                <div class="flex space-x-3">
+                                    <button type="button" id="btn-cancel-duel" class="text-gray-400 hover:text-white font-semibold">Cancelar</button>
+                                    <button type="submit" id="btn-submit-duel" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-md transition-colors flex items-center">
+                                        <span>Lançar Desafio</span>
+                                        <div id="duel-loader" class="loader hidden ml-2" style="width: 16px; height: 16px; border-width: 2px;"></div>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Lista de Duelos -->
+                    <div id="duels-list" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Cards de duelo injetados via JS -->
+                    </div>
+                    <p id="no-duels" class="text-center text-gray-500 mt-10 hidden">Nenhuma disputa encontrada. Desafie alguém!</p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal de Level Up -->
+    <div id="level-up-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-800 p-8 rounded-lg shadow-2xl text-center transform scale-95 transition-transform">
+            <h2 class="text-4xl font-bold text-yellow-400 mb-4">LEVEL UP!</h2>
+            <p class="text-white text-lg mb-2">Você alcançou o</p>
+            <p class="text-6xl font-bold text-indigo-400 mb-6">Level <span id="new-level-span"></span></p>
+            <button id="close-modal-btn"
+                class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded">Continuar</button>
+        </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+
+</html>
